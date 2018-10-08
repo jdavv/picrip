@@ -13,7 +13,7 @@ class PicRip:
     Create an instance of of reddit using the PRAW library. This will allow us to get all reddit users submissions
     easily and go from there with ripping any images
     """
-    def __init__(self, reddit_bot):
+    def __init__(self, reddit_bot, username):
 
         # user praw.ini for client authentication.
         self.reddit_bot = None
@@ -34,7 +34,7 @@ class PicRip:
         # temp list of urls with a content type of 'text/html'
         self.urls_requires_further_processing = []
         # redditor's username that will be scrapped
-        self.username = None
+        self.username = username
         # hold all the returned urls get_user_post method
         self.unprocessed_posts = []
         # mime types that will be downloaded
@@ -50,14 +50,6 @@ class PicRip:
         # mime type for urls that are not images
         self.content_type_further_processing = ['text/html']
 
-    def set_username(self, username):
-        """
-        Calling this method changes the username to scape submissions
-        :param username: string : redditor's username
-        :return:
-        """
-        self.username = username
-
     def get_user_posts(self):
         """
         Call various methods on the reddit instance to create a list of user's submissions URLs
@@ -66,14 +58,6 @@ class PicRip:
         """
         for submission in self.reddit.redditor(self.username).submissions.new(limit=None):
             self.unprocessed_posts.append(submission.url)
-
-    def length_of_list(self, list):
-        """
-        Quick method to return length of list
-        :param list: any list that is an attribute of instance
-        :return: integer : length of the list
-        """
-        return len(list)
 
     async def imgur_get_hash(self, url):
         """
@@ -176,15 +160,12 @@ class PicRip:
             self.gfycat_urls.append(url)
 
 async def main():
-    test = PicRip(reddit_bot='bot1')
 
     username = input("what username")
+    test = PicRip(reddit_bot='bot1', username=username)
 
-    test.set_username(username)
     test.get_user_posts()
     tasks = [test.check_url_response(url) for url in test.unprocessed_posts]
-    print(test.length_of_list(test.urls_ready_to_download), 'are ready to download')
-    print(test.length_of_list(test.urls_requires_further_processing), 'requires further operations')
     await asyncio.gather(*tasks, return_exceptions=False)
     domain_check = [test.split_url_by_domain(url) for url in test.urls_requires_further_processing]
     await asyncio.gather(*domain_check, return_exceptions=False)
@@ -199,3 +180,6 @@ async def main():
     await asyncio.gather(*gfycat_api_calls, return_exceptions=False)
     print(len(test.urls_ready_to_download), 'urls after gfycat')
 asyncio.run(main())
+
+
+
