@@ -87,7 +87,6 @@ class PicRip:
             if len(path) is 8:
                 self.imgur_album_hashes.append(path[1:])
 
-
     async def imgur_api_call(self, album_hash):
         """
         For each imgur album request JSON from imgur's api
