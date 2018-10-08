@@ -19,6 +19,10 @@ class PicRip:
         self.reddit_bot = None
         # instantiate an instance of the reddit object
         self.reddit = praw.Reddit(reddit_bot)
+        # known gfycat domain
+        self.gfycat_domain = ['gfycat.com']
+        # gfycat urls that need an api call
+        self.gfycat_urls = []
         # known imgur domains
         self.imgur_domains = ['i.imgur.com', 'm.imgur.com', 'imgur.com']
         # list to store any submissions that match the domains in imgur_domains
@@ -141,6 +145,21 @@ class PicRip:
             except aiohttp.ClientConnectionError as exception:
                 return print(exception)
 
+    async def gfycat_api(self, url):
+        api_url = 'https://api.gfycat.com/v1/gfycats{}'.format(urlparse(url).path)
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(api_url) as response:
+
+                if response.status == 200:
+                    await self.gfycat_json(await response.json())
+
+    async def gfycat_json(self, json):
+
+        gfycat_mp4 = (json.get('gfyItem').get('mp4Url'))
+
+        return self.urls_ready_to_download.append(gfycat_mp4)
+
     async def split_url_by_domain(self, url):
         """
         Check if url domain is in the attribute imgur_domains
@@ -152,7 +171,9 @@ class PicRip:
 
         if domain in self.imgur_domains:
             self.imgur_urls.append(url)
-      
+
+        if domain in self.gfycat_domain:
+            self.gfycat_urls.append(url)
 
 async def main():
     test = PicRip(reddit_bot='bot1')
@@ -167,10 +188,14 @@ async def main():
     await asyncio.gather(*tasks, return_exceptions=False)
     domain_check = [test.split_url_by_domain(url) for url in test.urls_requires_further_processing]
     await asyncio.gather(*domain_check, return_exceptions=False)
-    print(test.length_of_list(test.imgur_urls))
+    # print('imgur albums', test.length_of_list(test.imgur_urls))
+    print(len(test.urls_ready_to_download), 'ready to download')
     get_hashes = [test.imgur_get_hash(url) for url in test.imgur_urls]
     await asyncio.gather(*get_hashes, return_exceptions=False)
     imgur_api_calls = [test.imgur_api_call(album_hash) for album_hash in test.imgur_album_hashes]
     await asyncio.gather(*imgur_api_calls, return_exceptions=False)
-
+    print(len(test.urls_ready_to_download), 'urls before gfycat')
+    gfycat_api_calls = [test.gfycat_api(url) for url in test.gfycat_urls]
+    await asyncio.gather(*gfycat_api_calls, return_exceptions=False)
+    print(len(test.urls_ready_to_download), 'urls after gfycat')
 asyncio.run(main())
