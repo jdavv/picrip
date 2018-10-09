@@ -1,1 +1,1 @@
-imgur_client_id = 'Client-ID replace_this_with_client_id'
+imgur_client_id = 'Client-ID ecadb610f18da5a'
