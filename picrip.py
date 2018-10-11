@@ -1,11 +1,13 @@
 from urllib.parse import urlparse
 from imgur_client import *
+from downloader import *
 import aiofiles
 import aiohttp
 import asyncio
 import time
 import pathlib
 import praw
+
 
 
 class PicRip:
@@ -195,28 +197,32 @@ class PicRip:
 def main():
     """
     Create objects from the username list
-    :return: call print_all_urls with a list of objects
+    :return: call move_urls_to_download_queue with a list of objects
     """
     usernames = []
+
     user_objects = []
 
     for username in usernames:
         username = PicRip(reddit_bot='bot1', username=username)
         user_objects.append(username)
 
-    return print_all_urls(user_objects)
+    return move_urls_to_download_queue(user_objects)
 
 
-def print_all_urls(user_objects):
+def move_urls_to_download_queue(user_objects):
     """
     Iterate through the list attribute urls_ready_to_download from each object
     :param user_objects: a list of PicRip instances
     :return: prints url to stdout
     """
     for user_object in user_objects:
+        user_object.username = Downloader(user_object.urls_ready_to_download, user_object.username)
         for url in user_object.urls_ready_to_download:
-            print(url)
+            download = (url, user_object.username)
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print('took {}'.format(time.time() - start_time))
